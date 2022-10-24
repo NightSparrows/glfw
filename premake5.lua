@@ -1,14 +1,5 @@
 project "GLFW"
-	filter { "options:buildType=shared" }
-		kind "SharedLib"
-		disablewarnings { "4251" }		
-		postbuildcommands {
-		  ("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Sandbox")
-		}
-	filter { "options:buildType=static" }
-		kind "StaticLib"
-		staticruntime "on"
-	filter {}
+	kind "StaticLib"
 	language "C"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
