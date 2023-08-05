@@ -8,7 +8,6 @@ project "GLFW"
 		kind "SharedLib"
 		staticruntime "off"
 		defines "_GLFW_BUILD_DLL"
-		postbuildcommands ("{COPY} %{cfg.buildtarget.relpath} %{wks.location}/bin/" .. outputdir .. "/Sandbox")
 	filter {}
 	
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
