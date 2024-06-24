@@ -1,10 +1,10 @@
 project "GLFW"
 	language "C"
 
-	filter { "options:buildtype=static" }
+	filter { "not options:build-shared" }
 		kind "StaticLib"
 		staticruntime "on"
-	filter { "options:buildtype=shared" }
+	filter { "options:build-shared" }
 		kind "SharedLib"
 		staticruntime "off"
 		defines "_GLFW_BUILD_DLL"
