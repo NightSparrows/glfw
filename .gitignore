@@ -104,3 +104,21 @@ tests/windows
 
 bin/*
 bin-int/*
+src/xdg-shell-client-protocol-code.h
+src/xdg-shell-client-protocol.h
+src/xdg-decoration-unstable-v1-client-protocol-code.h
+src/xdg-decoration-unstable-v1-client-protocol.h
+src/viewporter-client-protocol-code.h
+src/viewporter-client-protocol.h
+src/relative-pointer-unstable-v1-client-protocol-code.h
+src/relative-pointer-unstable-v1-client-protocol.h
+src/pointer-constraints-unstable-v1-client-protocol-code.h
+src/pointer-constraints-unstable-v1-client-protocol.h
+src/fractional-scale-v1-client-protocol-code.h
+src/fractional-scale-v1-client-protocol.h
+src/xdg-activation-v1-client-protocol-code.h
+src/xdg-activation-v1-client-protocol.h
+src/idle-inhibit-unstable-v1-client-protocol-code.h
+src/idle-inhibit-unstable-v1-client-protocol.h
+src/wayland-client-protocol-code.h
+src/wayland-client-protocol.h
