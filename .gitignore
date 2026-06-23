@@ -122,3 +122,6 @@ src/idle-inhibit-unstable-v1-client-protocol-code.h
 src/idle-inhibit-unstable-v1-client-protocol.h
 src/wayland-client-protocol-code.h
 src/wayland-client-protocol.h
+
+.zig-cache/
+zig-out/
