@@ -1947,6 +1947,7 @@ static void keyboardHandleLeave(void* userData,
     timerfd_settime(_glfw.wl.keyRepeatTimerfd, 0, &timer, NULL);
 
     _glfw.wl.serial = serial;
+    _glfwDisableTextInputWayland();
     _glfw.wl.keyboardFocus = NULL;
     _glfwInputWindowFocus(window, GLFW_FALSE);
 }
@@ -2463,6 +2464,7 @@ void _glfwDestroyWindowWayland(_GLFWwindow* window)
         struct itimerspec timer = {0};
         timerfd_settime(_glfw.wl.keyRepeatTimerfd, 0, &timer, NULL);
 
+        _glfwDisableTextInputWayland();
         _glfw.wl.keyboardFocus = NULL;
     }
 
@@ -3617,4 +3619,3 @@ GLFWAPI struct wl_surface* glfwGetWaylandWindow(GLFWwindow* handle)
 }
 
 #endif // _GLFW_WAYLAND
-

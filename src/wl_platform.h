@@ -142,6 +142,8 @@ struct wl_output;
 #define xdg_activation_token_v1_interface _glfw_xdg_activation_token_v1_interface
 #define wl_surface_interface _glfw_wl_surface_interface
 #define wp_fractional_scale_v1_interface _glfw_wp_fractional_scale_v1_interface
+#define zwp_text_input_v3_interface _glfw_zwp_text_input_v3_interface
+#define zwp_text_input_manager_v3_interface _glfw_zwp_text_input_manager_v3_interface
 
 #define GLFW_WAYLAND_WINDOW_STATE         _GLFWwindowWayland  wl;
 #define GLFW_WAYLAND_LIBRARY_WINDOW_STATE _GLFWlibraryWayland wl;
@@ -459,6 +461,9 @@ typedef struct _GLFWlibraryWayland
     struct zwp_idle_inhibit_manager_v1*     idleInhibitManager;
     struct xdg_activation_v1*               activationManager;
     struct wp_fractional_scale_manager_v1*  fractionalScaleManager;
+    struct zwp_text_input_manager_v3*       textInputManager;
+    struct zwp_text_input_v3*               textInput;
+    GLFWbool                                textInputEnabled;
 
     _GLFWofferWayland*          offers;
     unsigned int                offerCount;
@@ -730,7 +735,8 @@ void _glfwAddOutputWayland(uint32_t name, uint32_t version);
 void _glfwUpdateBufferScaleFromOutputsWayland(_GLFWwindow* window);
 
 void _glfwAddSeatListenerWayland(struct wl_seat* seat);
+void _glfwEnableTextInputWayland(void);
+void _glfwDisableTextInputWayland(void);
 void _glfwAddDataDeviceListenerWayland(struct wl_data_device* device);
 
 GLFWbool _glfwWaitForEGLFrameWayland(_GLFWwindow* window);
-

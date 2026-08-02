@@ -177,6 +177,7 @@ pub fn build(b: *std.Build) void {
             "fractional-scale-v1",
             "xdg-activation-v1",
             "xdg-decoration-unstable-v1",
+            "text-input-unstable-v3",
         };
 
         for (protocols) |proto| {

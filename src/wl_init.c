@@ -49,6 +49,7 @@
 #include "fractional-scale-v1-client-protocol.h"
 #include "xdg-activation-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
+#include "text-input-unstable-v3-client-protocol.h"
 
 // NOTE: Versions of wayland-scanner prior to 1.17.91 named every global array of
 //       wl_interface pointers 'types', making it impossible to combine several unmodified
@@ -90,6 +91,120 @@
 #define types _glfw_idle_inhibit_types
 #include "idle-inhibit-unstable-v1-client-protocol-code.h"
 #undef types
+
+#define types _glfw_text_input_types
+#include "text-input-unstable-v3-client-protocol-code.h"
+#undef types
+
+static uint32_t decodeUTF8(const char** text)
+{
+    uint32_t codepoint = 0;
+    uint32_t count = 0;
+    static const uint32_t offsets[] =
+    {
+        0x00000000u, 0x00003080u, 0x000e2080u,
+        0x03c82080u, 0xfa082080u, 0x82082080u
+    };
+
+    do
+    {
+        codepoint = (codepoint << 6) + (unsigned char) **text;
+        (*text)++;
+        count++;
+    } while ((**text & 0xc0) == 0x80);
+
+    assert(count <= 6);
+    return codepoint - offsets[count - 1];
+}
+
+static void textInputHandleEnter(void* userData,
+                                 struct zwp_text_input_v3* textInput,
+                                 struct wl_surface* surface)
+{
+    if (_glfw.wl.keyboardFocus &&
+        surface == _glfw.wl.keyboardFocus->wl.surface)
+    {
+        _glfwEnableTextInputWayland();
+    }
+}
+
+static void textInputHandleLeave(void* userData,
+                                 struct zwp_text_input_v3* textInput,
+                                 struct wl_surface* surface)
+{
+    _glfw.wl.textInputEnabled = GLFW_FALSE;
+}
+
+static void textInputHandlePreeditString(void* userData,
+                                         struct zwp_text_input_v3* textInput,
+                                         const char* text,
+                                         int32_t cursorBegin,
+                                         int32_t cursorEnd)
+{
+}
+
+static void textInputHandleCommitString(void* userData,
+                                        struct zwp_text_input_v3* textInput,
+                                        const char* text)
+{
+    _GLFWwindow* window = _glfw.wl.keyboardFocus;
+    if (!window || !text)
+        return;
+
+    const int mods = _glfw.wl.xkb.modifiers;
+    while (*text)
+        _glfwInputChar(window, decodeUTF8(&text), mods, GLFW_TRUE);
+}
+
+static void textInputHandleDeleteSurroundingText(void* userData,
+                                                 struct zwp_text_input_v3* textInput,
+                                                 uint32_t beforeLength,
+                                                 uint32_t afterLength)
+{
+}
+
+static void textInputHandleDone(void* userData,
+                                struct zwp_text_input_v3* textInput,
+                                uint32_t serial)
+{
+}
+
+static const struct zwp_text_input_v3_listener textInputListener =
+{
+    textInputHandleEnter,
+    textInputHandleLeave,
+    textInputHandlePreeditString,
+    textInputHandleCommitString,
+    textInputHandleDeleteSurroundingText,
+    textInputHandleDone
+};
+
+void _glfwEnableTextInputWayland(void)
+{
+    if (!_glfw.wl.textInput || _glfw.wl.textInputEnabled ||
+        !_glfw.wl.keyboardFocus || !_glfw.wl.keyboardFocus->callbacks.character)
+    {
+        return;
+    }
+
+    zwp_text_input_v3_enable(_glfw.wl.textInput);
+    zwp_text_input_v3_set_content_type(
+        _glfw.wl.textInput,
+        ZWP_TEXT_INPUT_V3_CONTENT_HINT_NONE,
+        ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NORMAL);
+    zwp_text_input_v3_commit(_glfw.wl.textInput);
+    _glfw.wl.textInputEnabled = GLFW_TRUE;
+}
+
+void _glfwDisableTextInputWayland(void)
+{
+    if (!_glfw.wl.textInput || !_glfw.wl.textInputEnabled)
+        return;
+
+    zwp_text_input_v3_disable(_glfw.wl.textInput);
+    zwp_text_input_v3_commit(_glfw.wl.textInput);
+    _glfw.wl.textInputEnabled = GLFW_FALSE;
+}
 
 static void wmBaseHandlePing(void* userData,
                              struct xdg_wm_base* wmBase,
@@ -199,6 +314,13 @@ static void registryHandleGlobal(void* userData,
         _glfw.wl.fractionalScaleManager =
             wl_registry_bind(registry, name,
                              &wp_fractional_scale_manager_v1_interface,
+                             1);
+    }
+    else if (strcmp(interface, "zwp_text_input_manager_v3") == 0)
+    {
+        _glfw.wl.textInputManager =
+            wl_registry_bind(registry, name,
+                             &zwp_text_input_manager_v3_interface,
                              1);
     }
 }
@@ -911,6 +1033,15 @@ int _glfwInitWayland(void)
         _glfwAddDataDeviceListenerWayland(_glfw.wl.dataDevice);
     }
 
+    if (_glfw.wl.seat && _glfw.wl.textInputManager)
+    {
+        _glfw.wl.textInput =
+            zwp_text_input_manager_v3_get_text_input(
+                _glfw.wl.textInputManager, _glfw.wl.seat);
+        zwp_text_input_v3_add_listener(
+            _glfw.wl.textInput, &textInputListener, NULL);
+    }
+
     return GLFW_TRUE;
 }
 
@@ -972,6 +1103,10 @@ void _glfwTerminateWayland(void)
         wl_data_device_destroy(_glfw.wl.dataDevice);
     if (_glfw.wl.dataDeviceManager)
         wl_data_device_manager_destroy(_glfw.wl.dataDeviceManager);
+    if (_glfw.wl.textInput)
+        zwp_text_input_v3_destroy(_glfw.wl.textInput);
+    if (_glfw.wl.textInputManager)
+        zwp_text_input_manager_v3_destroy(_glfw.wl.textInputManager);
     if (_glfw.wl.pointer)
         wl_pointer_destroy(_glfw.wl.pointer);
     if (_glfw.wl.keyboard)
@@ -1016,4 +1151,3 @@ void _glfwTerminateWayland(void)
 }
 
 #endif // _GLFW_WAYLAND
-
